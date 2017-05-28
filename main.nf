@@ -26,12 +26,17 @@
 
 */
 
-params.fasta = "${baseDir}/tutorial"
+params.input = "${baseDir}/tutorial"
 params.output = "gfe_results.txt"
-fastaglob = "${params.fasta}/*.fa.gz"
+params.type = "fa"
+fileglob = "${params.input}/*.${type}"
 outputfile = file("${params.output}")
-inputFasta = Channel.fromPath(fastaglob).ifEmpty { error "cannot find any reads matching ${fastaglob}" }.map { path -> tuple(sample(path), path) }
 params.help = ''
+
+inputFiles = Channel.create()
+if(params.type == "hml"){
+  inputFiles = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
+}
 
 /*  Help section (option --help in input)  */
 if (params.help) {
@@ -44,9 +49,10 @@ if (params.help) {
     log.info 'nextflow run main.nf -with-docker nmdpbioinformatics/flow-gfe --fasta fastafiles/ [--outfile gfe_results.txt]'
     log.info ''
     log.info 'Mandatory arguments:'
-    log.info '    --fasta    FOLDER             Folder containing FASTA FILES'
+    log.info '    --input       FOLDER          Folder containing INPUT FILES'
     log.info 'Options:'
     log.info '    --outfile     STRING          Name of output file (default : gfe_results.txt)'
+    log.info '    --type        STRING          Type of the input files (default : fa)'
     log.info ''
     exit 1
 }
@@ -56,18 +62,45 @@ log.info ''
 log.info '---------------------------------------------------------------'
 log.info 'NEXTFLOW GFE'
 log.info '---------------------------------------------------------------'
-log.info "Input FASTA folder (--fastadir)        : ${params.fasta}"
-log.info "Output file name   (--outfile)         : ${params.output}"
+log.info "Input file folder   (--input)         : ${params.input}"
+log.info "Type of input file  (--type)          : ${params.type}"
+log.info "Output file name    (--output)        : ${params.output}"
 log.info "\n"
 
+// Breaking up HML file
+process breakupHml{
+  
+  tag{ "${subid} ${hmlfile}" }
+
+  input:
+    set subid, file(hmlfile) from inputFiles
+    val typed from inputtype
+  
+  when:
+    typed == "hml"
+
+  output:
+    set subid, file('*.fa.gz') into fastaFiles mode flatten
+
+  """
+    ngs-extract-consensus -i ${hmlfile}
+  """
+}
+
+inputData = Channel.create()
+if(params.type == "hml"){
+  inputData = outputFast
+}else{
+  inputData = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
+}
 
 // Breaking up the fasta files
 process breakupFasta{
   
-  tag{ expected }
+  tag{ "${subid} ${fasta}"" }
 
   input:
-    file(expected) from inputFasta
+    set subid, file(fasta) from inputFasta
 
   output:
     file('*.txt') into fastaFiles mode flatten
