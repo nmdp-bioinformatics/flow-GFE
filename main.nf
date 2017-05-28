@@ -28,7 +28,7 @@
 
 params.fasta = "${baseDir}/tutorial"
 params.output = "gfe_results.txt"
-fastaglob = "${params.fasta}/*.fa"
+fastaglob = "${params.fasta}/*.fa.gz"
 outputfile = file("${params.output}")
 inputFasta = Channel.fromPath(fastaglob).ifEmpty { error "cannot find any reads matching ${fastaglob}" }.map { path -> tuple(sample(path), path) }
 params.help = ''
@@ -73,7 +73,7 @@ process breakupFasta{
     file('*.txt') into fastaFiles mode flatten
 
   """
-    breakup-fasta < ${expected}
+    zcat ${expected} | breakup-fasta
   """
 }
 
