@@ -84,7 +84,7 @@ if(params.type == "hml" || params.type == "xml.gz"){
       val typed from params.type
 
     output:
-      set subid, file('*.fa.gz') into outputFasta mode flatten
+      file('*.fa.gz') into outputFasta mode flatten
 
     """
       ngs-extract-consensus -i ${hmlfile}
@@ -94,7 +94,7 @@ if(params.type == "hml" || params.type == "xml.gz"){
 
 inputData = Channel.create()
 if(params.type == "hml" || params.type == "xml.gz"){
-  inputData = outputFasta
+  inputData = Channel.from(outputFasta).map { path -> tuple(sample(path), path) }
 }else{
   inputData = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
 }
