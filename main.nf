@@ -35,7 +35,7 @@ params.help = ''
 
 catType = "cat"
 inputFiles = Channel.create()
-if(params.type == "hml"){
+if(params.type == "hml" || params.type == "xml.gz"){
   inputFiles = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
   catType = "zcat"
 }else{
@@ -74,7 +74,7 @@ log.info "Output file name    (--output)        : ${params.output}"
 log.info "\n"
 
 // Breaking up HML file
-if(params.type == "hml"){
+if(params.type == "hml" || params.type == "xml.gz"){
   process breakupHml{
     
     tag{ "${subid} ${hmlfile}" }
