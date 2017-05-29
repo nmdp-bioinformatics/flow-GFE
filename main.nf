@@ -74,23 +74,22 @@ log.info "Output file name    (--output)        : ${params.output}"
 log.info "\n"
 
 // Breaking up HML file
-process breakupHml{
-  
-  tag{ "${subid} ${hmlfile}" }
+if(params.type == "hml"){
+  process breakupHml{
+    
+    tag{ "${subid} ${hmlfile}" }
 
-  input:
-    set subid, file(hmlfile) from inputFiles
-    val typed from params.type
-  
-  when:
-    typed == "hml"
+    input:
+      set subid, file(hmlfile) from inputFiles
+      val typed from params.type
 
-  output:
-    set subid, file('*.fa.gz') into outputFasta mode flatten
+    output:
+      set subid, file('*.fa.gz') into outputFasta mode flatten
 
-  """
-    ngs-extract-consensus -i ${hmlfile}
-  """
+    """
+      ngs-extract-consensus -i ${hmlfile}
+    """
+  }
 }
 
 inputData = Channel.create()
