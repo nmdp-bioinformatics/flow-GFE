@@ -29,7 +29,7 @@
 params.input = "${baseDir}/tutorial"
 params.output = "gfe_results.txt"
 params.type = "fa"
-fileglob = "${params.input}/*.${type}"
+fileglob = "${params.input}/*.${params.type}"
 outputfile = file("${params.output}")
 params.help = ''
 
@@ -80,13 +80,13 @@ process breakupHml{
 
   input:
     set subid, file(hmlfile) from inputFiles
-    val typed from inputtype
+    val typed from params.type
   
   when:
     typed == "hml"
 
   output:
-    set subid, file('*.fa.gz') into fastaFiles mode flatten
+    set subid, file('*.fa.gz') into outputFasta mode flatten
 
   """
     ngs-extract-consensus -i ${hmlfile}
@@ -95,7 +95,7 @@ process breakupHml{
 
 inputData = Channel.create()
 if(params.type == "hml"){
-  inputData = outputFast
+  inputData = outputFasta
 }else{
   inputData = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
 }
@@ -103,16 +103,16 @@ if(params.type == "hml"){
 // Breaking up the fasta files
 process breakupFasta{
   
-  tag{ "${subid} ${fasta}"" }
+  tag{ "${subid} ${fasta}" }
 
   input:
-    set subid, file(fasta) from inputFasta
+    set subid, file(fasta) from inputData
 
   output:
-    set suid, file('*.txt') into fastaFiles mode flatten
+    set subid, file('*.txt') into fastaFiles mode flatten
 
   """
-    ${catType} ${expected} | breakup-fasta
+    ${catType} ${fasta} | breakup-fasta
   """
 }
 
