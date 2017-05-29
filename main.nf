@@ -33,9 +33,14 @@ fileglob = "${params.input}/*.${type}"
 outputfile = file("${params.output}")
 params.help = ''
 
+catType = "cat"
 inputFiles = Channel.create()
 if(params.type == "hml"){
   inputFiles = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
+}else{
+  if(params.type =~ "gz"){
+    catType = "zcat"
+  }
 }
 
 /*  Help section (option --help in input)  */
@@ -106,7 +111,7 @@ process breakupFasta{
     file('*.txt') into fastaFiles mode flatten
 
   """
-    zcat ${expected} | breakup-fasta
+    ${catType} ${expected} | breakup-fasta
   """
 }
 
