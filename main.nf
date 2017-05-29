@@ -37,6 +37,7 @@ catType = "cat"
 inputFiles = Channel.create()
 if(params.type == "hml"){
   inputFiles = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
+  catType = "zcat"
 }else{
   if(params.type =~ "gz"){
     catType = "zcat"
