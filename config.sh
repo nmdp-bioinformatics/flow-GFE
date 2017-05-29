@@ -41,7 +41,7 @@ echo -n "Enter security group [optional]: "
 read sggroup
 
 echo "cloud{" > nextflow.config
-echo "	imageId = 'ami-f34507e5'" >> nextflow.config
+echo "	imageId = 'ami-84074e92'" >> nextflow.config
 echo "	instanceType = '${instance}'" >> nextflow.config
 echo "	userName = '${username}'" >> nextflow.config
 echo "	keyName = '${keyname}'" >> nextflow.config
