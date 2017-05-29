@@ -109,7 +109,7 @@ process breakupFasta{
     set subid, file(fasta) from inputFasta
 
   output:
-    file('*.txt') into fastaFiles mode flatten
+    set suid, file('*.txt') into fastaFiles mode flatten
 
   """
     ${catType} ${expected} | breakup-fasta
@@ -123,13 +123,13 @@ process getGFE{
   tag{ fastafile }
 
   input:
-    file(fastafile) from fastaFiles
+    set subid, file(fastafile) from fastaFiles
 
   output:
     file {"*.txt"}  into gfeResults mode flatten
 
   """
-    cat ${fastafile} | fasta2gfe
+    cat ${fastafile} | fasta2gfe -s ${subid}
   """
 }
 
