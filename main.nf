@@ -94,7 +94,7 @@ if(params.type == "hml" || params.type == "xml.gz"){
 
 inputData = Channel.create()
 if(params.type == "hml" || params.type == "xml.gz"){
-  inputData = Channel.from(outputFasta).map { path -> tuple(sample(path), path) }
+  inputData = outputFasta.map { path -> tuple(sample(path), path) }
 }else{
   inputData = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
 }
