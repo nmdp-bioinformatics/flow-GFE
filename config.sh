@@ -21,12 +21,7 @@ if [ -z ${keyname} ];then
 	exit 1
 fi
 
-echo -n "Enter userName [*REQUIRED*]: "
-read username
-if [ -z ${username} ];then
-	printf "${RED}valid ${RED}userName ${RED}required!${NC}\n"
-	exit 1
-fi
+username="ec2-user"
 
 echo -n "Enter instance type [default = m4.xlarge]: "
 read instance
@@ -34,14 +29,17 @@ if [ -z ${instance} ];then
 	instance="m4.xlarge"
 fi
 
-echo -n "Enter subnet ID [optional]: "
+echo -n "Enter subnet ID: "
 read subnet
 
-echo -n "Enter security group [optional]: "
+echo -n "Enter security group: "
 read sggroup
 
+echo -n "Enter EFS ID: "
+read efsid
+
 echo "cloud{" > nextflow.config
-echo "	imageId = 'ami-84074e92'" >> nextflow.config
+echo "	imageId = 'ami-d1f9a6aa'" >> nextflow.config
 echo "	instanceType = '${instance}'" >> nextflow.config
 echo "	userName = '${username}'" >> nextflow.config
 echo "	keyName = '${keyname}'" >> nextflow.config
@@ -52,6 +50,12 @@ fi
 
 if [ ! -z ${subnet} ];then
 	echo "	subnetId = '${subnet}'" >> nextflow.config
+fi
+
+if [ ! -z ${efsid} ];then
+	echo "	sharedStorageId = '${efsid}'" >> nextflow.config
+else
+	printf "${RED}EFS ID is required! ${NC}\n"
 fi
 
 echo "}" >> nextflow.config

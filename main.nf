@@ -76,7 +76,8 @@ log.info "\n"
 // Breaking up HML file
 if(params.type == "hml" || params.type == "xml.gz"){
   process breakupHml{
-    
+    errorStrategy 'ignore'
+
     tag{ "${subid} ${hmlfile}" }
 
     input:
@@ -101,7 +102,8 @@ if(params.type == "hml" || params.type == "xml.gz"){
 
 // Breaking up the fasta files
 process breakupFasta{
-  
+  errorStrategy 'ignore'
+
   tag{ "${subid} ${fasta}" }
 
   input:

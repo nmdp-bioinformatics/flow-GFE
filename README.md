@@ -6,9 +6,9 @@ Run fasta files through GFE with nextflow
 ```bash
 # nextflow.config
 cloud {
-    imageId = 'ami-f34507e5'
+    imageId = 'ami-d1f9a6aa'
     instanceType = 'm4.xlarge'
-    userName = 'your_username'
+    userName = 'ec2-user'
     keyName = 'your_keyname'
 }
 
@@ -25,7 +25,9 @@ I recommend using the **ami-f34507e5** image because it was specifically built f
 ### Usage
 ```bash
 ./nextflow run nmdp-bioinformatics/flow-GFE \
-    --fasta /location/of/fasta/files --outfile typing_results.txt
+ 	-with-docker nmdpbioinformatics/service-gfe-submission \
+    --input s3://bucket/data/directory --outfile typing_results.txt \
+    --type fa
 ```
 Running this will pull down this repository and run the main.nf nextflow script. 
 
