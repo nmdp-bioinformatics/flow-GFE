@@ -21,28 +21,19 @@
     > http://www.gnu.org/licenses/lgpl.html
 
     ./nextflow run nmdp-bioinformatics/flow-GFE \
-      -with-docker nmdpbioinformatics/flow-gfe \
-      --fastafiles /location/of/fastafiles --outfile typing_results.txt
+      -with-docker nmdpbioinformatics/service-gfe-submission \
+      --input /location/of/hmlfiles --outfile typing_results.txt
 
 */
 
 params.input = "${baseDir}/tutorial"
 params.output = "gfe_results.txt"
-params.type = "fa"
+params.type = "xml.gz"
 fileglob = "${params.input}/*.${params.type}"
 outputfile = file("${params.output}")
 params.help = ''
 
-catType = "cat"
-inputFiles = Channel.create()
-if(params.type == "hml" || params.type == "xml.gz"){
-  inputFiles = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
-  catType = "zcat"
-}else{
-  if(params.type =~ "gz"){
-    catType = "zcat"
-  }
-}
+inputFiles = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
 
 /*  Help section (option --help in input)  */
 if (params.help) {
@@ -52,13 +43,19 @@ if (params.help) {
     log.info '---------------------------------------------------------------'
     log.info ''
     log.info 'Usage: '
-    log.info 'nextflow run main.nf -with-docker nmdpbioinformatics/flow-gfe --fasta fastafiles/ [--outfile gfe_results.txt]'
+    log.info '  nextflow run nmdp-bioinformatics/flow-GFE \\'
+    log.info '    -with-docker nmdpbioinformatics/service-gfe-submission \\'
+    log.info '    --input hmlfiles/ [--outfile gfe_results.txt] '
     log.info ''
-    log.info 'Mandatory arguments:'
-    log.info '    --input       FOLDER          Folder containing INPUT FILES'
+    log.info 'Run Tutorial: '
+    log.info '  nextflow run nmdp-bioinformatics/flow-GFE \\'
+    log.info '    -with-docker nmdpbioinformatics/service-gfe-submission '
+    log.info ''
     log.info 'Options:'
+    log.info '    --input       FOLDER          Folder containing INPUT FILES'
     log.info '    --outfile     STRING          Name of output file (default : gfe_results.txt)'
-    log.info '    --type        STRING          Type of the input files (default : fa)'
+    log.info '    --type        STRING          Type of the input files (default : xml.gz)'
+    log.info ''
     log.info ''
     exit 1
 }
@@ -71,6 +68,8 @@ log.info '---------------------------------------------------------------'
 log.info "Input file folder   (--input)         : ${params.input}"
 log.info "Type of input file  (--type)          : ${params.type}"
 log.info "Output file name    (--output)        : ${params.output}"
+log.info "Project                               : $workflow.projectDir"
+log.info "Git info                              : $workflow.repository - $workflow.revision [$workflow.commitId]"
 log.info "\n"
 
 // Breaking up HML file
@@ -85,60 +84,43 @@ if(params.type == "hml" || params.type == "xml.gz"){
       val typed from params.type
 
     output:
-      file('*.fa.gz') into outputFasta mode flatten
+      stdout fastaFiles
 
     """
-      ngs-extract-consensus -i ${hmlfile}
+      ngs-extract-consensus-stdout -i ${hmlfile}
     """
   }
-}
-
-inputData = Channel.create()
-if(params.type == "hml" || params.type == "xml.gz"){
-  inputData = outputFasta.map { path -> tuple(sample(path), path) }
-}else{
-  inputData = Channel.fromPath(fileglob).ifEmpty { error "cannot find any files matching ${fileglob}" }.map { path -> tuple(sample(path), path) }
-}
-
-// Breaking up the fasta files
-process breakupFasta{
-  errorStrategy 'ignore'
-
-  tag{ "${subid} ${fasta}" }
-
-  input:
-    set subid, file(fasta) from inputData
-
-  output:
-    set subid, file('*.txt') into fastaFiles mode flatten
-
-  """
-    ${catType} ${fasta} | breakup-fasta
-  """
 }
 
 //Get GFE For each sequence
 process getGFE{
   errorStrategy 'ignore'
 
-  tag{ fastafile }
-
   input:
-    set subid, file(fastafile) from fastaFiles
+    stdin from fastaFiles
 
   output:
-    file {"*.txt"}  into gfeResults mode flatten
+    stdout gfeResults
 
   """
-    cat ${fastafile} | fasta2gfe -s ${subid}
+    fasta2gfe_nextflow -
   """
 }
 
 gfeResults
 .collectFile() {  gfe ->
-       [ "temp_file", gfe.text ]
+       [ "temp_file", gfe ]
    }
 .subscribe { file -> copy(file) }
+
+
+// On completion
+workflow.onComplete {
+    println "Pipeline completed at : $workflow.complete"
+    println "Duration              : ${workflow.duration}"
+    println "Execution status      : ${ workflow.success ? 'OK' : 'failed' }"
+}
+
 
 def copy (file) { 
   log.info "Copying ${file.name} into: $outputfile"

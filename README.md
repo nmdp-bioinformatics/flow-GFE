@@ -10,6 +10,9 @@ cloud {
     instanceType = 'm4.xlarge'
     userName = 'ec2-user'
     keyName = 'your_keyname'
+    securityGroup = 'sg-yoursgid'
+    sharedStorageId = 'fs-yourfsid'
+    subnetId = 'subnet-yoursubnetid'
 }
 
 # create config
@@ -20,14 +23,14 @@ curl -fsSL get.nextflow.io | bash
 ./nextflow cloud create gfe-cluster -c 3
 ssh -i ~/.ssh/your_keyname your_username@ip.returned.above.step
 ```
-I recommend using the **ami-f34507e5** image because it was specifically built for running this process. You can change or remove the autoscale properties depending on the resources you require. For more information on this configuration please refer to the [nextflow documentation](https://www.nextflow.io/docs/latest/awscloud.html).
+I recommend using the **ami-d1f9a6aa** image because it was specifically built for running this process. You can change or remove the autoscale properties depending on the resources you require. For more information on this configuration please refer to the [nextflow documentation](https://www.nextflow.io/docs/latest/awscloud.html).
 
 ### Usage
 ```bash
 ./nextflow run nmdp-bioinformatics/flow-GFE \
  	-with-docker nmdpbioinformatics/service-gfe-submission \
     --input s3://bucket/data/directory --outfile typing_results.txt \
-    --type fa
+    --type xml
 ```
 Running this will pull down this repository and run the main.nf nextflow script. 
 
