@@ -37,14 +37,15 @@ read sggroup
 
 #echo -n "Enter EFS ID: "
 #read efsid
-efs_token=$(date | awk 'BEGIN{OFS="_"} {print $2, $3, $6}') #create unique efs token based on current date.
+aws_region=$(aws configure get region --profile default)
+efs_token=$(date | awk 'BEGIN{OFS="_"} {print $4, $2, $3, $6}' | tr -d ':' ) #create unique efs token based on current date and time.
 read -p "Automatically create EFS Filesystem? [y/n] " efs_prompt
 if [ $efs_prompt == "y" ]
 then 
-	efs_id=$(aws efs create-file-system --creation-token $efs_token"_nextflowFS" --region us-east-1 --profile default | grep FileSystemId | awk -F "\"" '{print $4}') #Create Elastic File System
-	aws efs create-tags --file-system-id $efs_id --tags Key=Name,Value=$efs_token"_nextflowFS" --region us-east-1 --profile default #Tag elastic filesystem
+	efs_id=$(aws efs create-file-system --creation-token $efs_token"_nextflowFS" --region $aws_region --profile default | grep FileSystemId | awk -F "\"" '{print $4}') #Create Elastic File System
+	aws efs create-tags --file-system-id $efs_id --tags Key=Name,Value=$efs_token"_nextflowFS" --region $aws_region --profile default #Tag elastic filesystem
 	sleep 10
-        aws efs create-mount-target --file-system-id $efs_id --subnet-id $subnet --security-group $sggroup --region us-east-1 --profile default #Create mount target on Elastic File System
+        aws efs create-mount-target --file-system-id $efs_id --subnet-id $subnet --security-group $sggroup --region $aws_region --profile default #Create mount target on Elastic File System
 	echo "EFS Filesystem Creation Completed! "
 elif [ $efs_prompt == "n" ]
 then 
