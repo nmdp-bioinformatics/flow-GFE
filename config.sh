@@ -35,8 +35,22 @@ read subnet
 echo -n "Enter security group: "
 read sggroup
 
-echo -n "Enter EFS ID: "
-read efsid
+#echo -n "Enter EFS ID: "
+#read efsid
+aws_region=$(aws configure get region --profile default)
+efs_token=$(date | awk 'BEGIN{OFS="_"} {print $4, $2, $3, $6}' | tr -d ':' ) #create unique efs token based on current date and time.
+read -p "Automatically create EFS Filesystem? [y/n] " efs_prompt
+if [ $efs_prompt == "y" ]
+then 
+	efs_id=$(aws efs create-file-system --creation-token $efs_token"_nextflowFS" --region $aws_region --profile default | grep FileSystemId | awk -F "\"" '{print $4}') #Create Elastic File System
+	aws efs create-tags --file-system-id $efs_id --tags Key=Name,Value=$efs_token"_nextflowFS" --region $aws_region --profile default #Tag elastic filesystem
+	sleep 10
+        aws efs create-mount-target --file-system-id $efs_id --subnet-id $subnet --security-group $sggroup --region $aws_region --profile default #Create mount target on Elastic File System
+	echo "EFS Filesystem Creation Completed! "
+elif [ $efs_prompt == "n" ]
+then 
+	read -p "Enter EFS ID:  " efs_id
+fi
 
 echo "cloud{" > nextflow.config
 echo "	imageId = 'ami-d1f9a6aa'" >> nextflow.config
@@ -52,8 +66,8 @@ if [ ! -z ${subnet} ];then
 	echo "	subnetId = '${subnet}'" >> nextflow.config
 fi
 
-if [ ! -z ${efsid} ];then
-	echo "	sharedStorageId = '${efsid}'" >> nextflow.config
+if [ ! -z ${efs_id} ];then
+	echo "	sharedStorageId = '${efs_id}'" >> nextflow.config
 else
 	printf "${RED}EFS ID is required! ${NC}\n"
 fi
