@@ -44,8 +44,9 @@ then
 	efs_id=$(aws efs create-file-system --creation-token $efs_token"_nextflowFS" --region us-east-1 --profile default | grep FileSystemId | awk -F "\"" '{print $4}') #Create Elastic File System
 	aws efs create-tags --file-system-id $efs_id --tags Key=Name,Value=$efs_token"_nextflowFS" --region us-east-1 --profile default #Tag elastic filesystem
 	sleep 10
-	aws efs create-mount-target --file-system-id $efs_id --subnet-id subnet-052a174d --security-group sg-9d9253e1 --region us-east-1 --profile default #Create mount target on Elastic File System
-        echo "EFS Filesystem Creation Completed! "
+#	aws efs create-mount-target --file-system-id $efs_id --subnet-id subnet-052a174d --security-group sg-9d9253e1 --region us-east-1 --profile default #Create mount target on Elastic File System
+        aws efs create-mount-target --file-system-id $efs_id --subnet-id $subnet --security-group $sggroup --region us-east-1 --profile default #Create mount target on Elastic File System
+	echo "EFS Filesystem Creation Completed! "
 elif [ $efs_prompt == "n" ]
 then 
 	read -p "Enter EFS ID:  " efs_id
